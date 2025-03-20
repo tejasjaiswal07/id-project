@@ -1,0 +1,85 @@
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.form {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.error {
+  padding: 1rem;
+  background-color: rgba(244, 67, 54, 0.1);
+  border-radius: 4px;
+  margin-bottom: 1.5rem;
+}
+
+.videoInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.thumbnailContainer {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.thumbnail {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.details {
+  width: 100%;
+}
+
+@media (min-width: 768px) {
+  .videoInfo {
+    flex-direction: row;
+  }
+  
+  .thumbnailContainer {
+    width: 240px;
+    flex-shrink: 0;
+  }
+  
+  .details {
+    flex-grow: 1;
+  }
+}
+
+.progressContainer {
+  margin-top: 1rem;
+}
+
+.progressInfo {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.success {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #4caf50;
+  color: white;
+  border-radius: 4px;
+}
+
+.error {
+  margin-top: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #f44336;
+  color: white;
+  border-radius: 4px;
+} 

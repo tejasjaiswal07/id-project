@@ -1,0 +1,13 @@
+// Root middleware file for Next.js
+// No imports to avoid Edge Runtime issues
+// We'll run initialization through an API endpoint instead
+
+export function middleware(request) {
+  // This is a very simple middleware that just passes through the request
+  return Response.next();
+}
+
+// Only apply this middleware to API routes
+export const config = {
+  matcher: '/api/:path*',
+}

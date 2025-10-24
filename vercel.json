@@ -4,5 +4,7 @@
       "path": "/api/cron/cleanup",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "buildCommand": "npm ci --legacy-peer-deps --no-optional && next build",
+  "installCommand": "npm ci --legacy-peer-deps --no-optional"
 } 

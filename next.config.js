@@ -43,6 +43,11 @@ const nextConfig = {
   },
   // Tell webpack to not bundle puppeteer or puppeteer-extra packages for client-side
   transpilePackages: [],
+  // Ignore optional dependencies that may fail on some platforms
+  onDemandEntries: {
+    maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 5,
+  },
 }
 
 module.exports = nextConfig

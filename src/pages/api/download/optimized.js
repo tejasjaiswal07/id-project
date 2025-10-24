@@ -112,8 +112,9 @@ export default async function handler(req, res) {
 
     // Check platform
     if (platform === 'instagram' || url.includes('instagram.com')) {
-      // Instagram downloads not available on Vercel Hobby
-      throw new Error(UNAVAILABLE_FEATURES.instagram);
+      // Forward to robust Instagram downloader
+      const { default: instagramHandler } = await import('./instagram');
+      return instagramHandler(req, res);
     } else if (platform === 'youtube' || url.includes('youtube.com') || url.includes('youtu.be')) {
       // Use ytdl-core for YouTube (available on Vercel)
       result = await downloadYouTube(url, format, quality);

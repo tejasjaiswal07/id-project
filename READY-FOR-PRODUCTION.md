@@ -166,7 +166,7 @@ curl -X POST https://your-domain.com/api/download/optimized \
 | Performance Monitoring | ✅ Ready | `/api/health/performance` | Metrics dashboard |
 | Rate Limiting | ✅ Ready | All endpoints | 30 req/min per IP |
 | Error Tracking | ✅ Ready | Sentry integration | When configured |
-| Cron Cleanup | ✅ Ready | Hourly execution | Cleanup jobs |
+| Cron Cleanup | ✅ Ready | Daily at midnight UTC | Hobby plan compatible |
 
 ---
 

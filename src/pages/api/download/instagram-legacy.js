@@ -7,8 +7,8 @@
  * This endpoint will be removed in version 2.0.0
  */
 
-import { withRateLimit } from '@/middleware/rate-limiter';
-import { captureMessage } from '@/utils/sentry-config';
+import { withRateLimit } from '../../../middleware/rate-limiter';
+import { captureMessage } from '../../../utils/sentry-config';
 
 async function handler(req, res) {
   // Log deprecation warning

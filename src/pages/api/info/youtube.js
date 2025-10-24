@@ -5,8 +5,8 @@
  * Please migrate to /api/info/enhanced for better performance and maintenance.
  */
 
-import { withRateLimit } from '@/middleware/rate-limiter';
-import { captureMessage } from '@/utils/sentry-config';
+import { withRateLimit } from '../../../middleware/rate-limiter';
+import { captureMessage } from '../../../utils/sentry-config';
 
 async function handler(req, res) {
   console.warn('[DEPRECATED] Legacy YouTube info endpoint called. Please migrate to /api/info/enhanced');

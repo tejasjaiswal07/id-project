@@ -1,8 +1,10 @@
 /**
- * DEPRECATED: YouTube Download Endpoint (Legacy)
+ * DEPRECATED: Instagram Download Endpoint (Legacy)
  *
  * This endpoint is deprecated and maintained only for backward compatibility.
  * Please migrate to /api/download/optimized for better performance and maintenance.
+ *
+ * This endpoint will be removed in version 2.0.0
  */
 
 import { withRateLimit } from '@/middleware/rate-limiter';
@@ -10,12 +12,12 @@ import { captureMessage } from '@/utils/sentry-config';
 
 async function handler(req, res) {
   // Log deprecation warning
-  console.warn('[DEPRECATED] Legacy YouTube download endpoint called. Please migrate to /api/download/optimized');
+  console.warn('[DEPRECATED] Legacy Instagram download endpoint called. Please migrate to /api/download/optimized');
   captureMessage(
     'Deprecated API endpoint used',
     'warning',
     {
-      endpoint: '/api/download/youtube',
+      endpoint: '/api/download/instagram',
       url: req.body?.url,
       recommendation: 'Migrate to /api/download/optimized',
     }
@@ -23,13 +25,12 @@ async function handler(req, res) {
 
   // Add deprecation headers
   res.setHeader('Deprecation', 'true');
-  res.setHeader('Sunset', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString());
+  res.setHeader('Sunset', new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toUTCString()); // 90 days
   res.setHeader('Link', '</api/download/optimized>; rel="successor-version"');
 
   // Forward request to optimized endpoint
   try {
-    // Import and call optimized handler
-    const { default: optimizedHandler } = await import('./optimized');
+    const optimizedHandler = require('./optimized').default;
     return optimizedHandler(req, res);
   } catch (error) {
     console.error('Error forwarding to optimized endpoint:', error);
@@ -42,13 +43,3 @@ async function handler(req, res) {
 }
 
 export default withRateLimit(handler);
-
-// Support both GET and POST requests
-export const config = {
-  api: {
-    responseLimit: false,
-    bodyParser: {
-      sizeLimit: '1mb',
-    },
-  },
-};

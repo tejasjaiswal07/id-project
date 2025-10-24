@@ -8,8 +8,11 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "cleanup": "node scripts/cleanup.js"
+    "test": "jest --coverage",
+    "test:watch": "jest --watch",
+    "test:ci": "jest --ci --coverage --maxWorkers=2",
+    "cleanup": "node scripts/cleanup.js",
+    "validate:env": "node -e \"require('./src/utils/env-validator').logEnvStatus()\""
   },
   "keywords": [
     "video downloader",
@@ -50,5 +53,12 @@
     "youtube-dl-exec": "^3.0.19",
     "yt-dlp-exec": "^1.0.2",
     "ytdl-core": "^4.11.5"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0",
+    "@testing-library/react": "^14.0.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "jest-mock-extended": "^3.0.4"
   }
 }

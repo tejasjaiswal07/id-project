@@ -31,9 +31,7 @@ export default function InstagramDownloader() {
   const [downloadProgress, setDownloadProgress] = useState(0);
   const [downloadId, setDownloadId] = useState(null);
   const [successMessage, setSuccessMessage] = useState('');
-  const [downloadQueue, setDownloadQueue] = useState([]);
-  const [processingQueue, setProcessingQueue] = useState(false);
-  const [downloadStatus, setDownloadStatus] = useState({});
+  // Removed queue system to prevent multiple downloads
   const progressIntervalRef = useRef(null);
   const downloadLinkRef = useRef(null);
   const formRef = useRef(null);
@@ -88,47 +86,7 @@ export default function InstagramDownloader() {
     }
   }, [downloadId, downloading]);
 
-  // Process the download queue
-  useEffect(() => {
-    const processQueue = async () => {
-      if (downloadQueue.length > 0 && !processingQueue) {
-        setProcessingQueue(true);
-        const nextDownload = downloadQueue[0];
-        
-        try {
-          console.log('Processing queued download:', nextDownload);
-          const success = await processDownload(nextDownload);
-          
-          if (!success && nextDownload.retryCount < 3) {
-            // Put back in queue with increased retry count
-            console.log(`Scheduling retry ${nextDownload.retryCount + 1}/3 for download`);
-            setDownloadQueue(prev => [
-              ...prev.slice(1), 
-              { 
-                ...nextDownload, 
-                retryCount: (nextDownload.retryCount || 0) + 1,
-                retryDelay: 2000 * (nextDownload.retryCount || 0) + 1
-              }
-            ]);
-            
-            // Wait before trying the next item
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          } else {
-            // Remove the processed item
-            setDownloadQueue(prev => prev.slice(1));
-          }
-        } catch (err) {
-          console.error('Error processing download from queue:', err);
-          // Remove failed item and continue
-          setDownloadQueue(prev => prev.slice(1));
-        }
-        
-        setProcessingQueue(false);
-      }
-    };
-    
-    processQueue();
-  }, [downloadQueue, processingQueue]);
+  // Simplified download process - no queue system to prevent multiple downloads
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -170,20 +128,33 @@ export default function InstagramDownloader() {
       
       setMediaInfo(initialMediaInfo);
       
-      // Then try to get more detailed info from the server
+      // Then try to get more detailed info from the enhanced server API
       try {
-        const response = await axios.get(`/api/info/instagram?url=${encodeURIComponent(url)}`);
-        const serverMediaInfo = response.data;
-        
-        // Only update if we got valid data
-        if (serverMediaInfo && serverMediaInfo.thumbnail) {
-          setMediaInfo(prev => ({
-            ...prev,
-            ...serverMediaInfo,
-            // Preserve the post ID and type we already extracted
-            postId: prev.postId,
-            postType: prev.postType
-          }));
+        const response = await fetch('/api/info/enhanced', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: url,
+            platform: 'instagram'
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const serverMediaInfo = result.data;
+          
+          // Only update if we got valid data
+          if (serverMediaInfo && serverMediaInfo.thumbnail) {
+            setMediaInfo(prev => ({
+              ...prev,
+              ...serverMediaInfo,
+              // Preserve the post ID and type we already extracted
+              postId: prev.postId,
+              postType: prev.postType
+            }));
+          }
         }
       } catch (infoError) {
         console.warn('Could not fetch detailed media info:', infoError);
@@ -199,183 +170,92 @@ export default function InstagramDownloader() {
     }
   };
 
+  // Removed old download function with queue system
+
+  // Simplified download process - no queue system to prevent multiple downloads
   const handleDownload = async () => {
     if (!mediaInfo) return;
     
-    // Add to download queue with increased priority for multiple attempts
-    // Add multiple entries to ensure at least one succeeds
-    setDownloadQueue(prev => [
-      ...prev, 
-      { url, mediaInfo, retryCount: 0, priority: 'high' },
-      { url, mediaInfo, retryCount: 0, priority: 'medium', retryDelay: 1500 },
-      { url, mediaInfo, retryCount: 0, priority: 'low', retryDelay: 3000 }
-    ]);
+    // Prevent multiple downloads by checking if already downloading
+    if (downloading) {
+      console.log('Download already in progress, skipping...');
+      return;
+    }
     
-    // Show progress simulation for user feedback
-    setDownloading(true);
-    setDownloadProgress(0);
-    setError('');
-    setShowError(false);
-    
-    // Simulate progress for better UX
-    const isVideo = mediaInfo.type === 'video' || mediaInfo.postType === 'reel';
-    simulateProgressAndComplete(isVideo);
-  };
-
-  // Helper function to simulate progress and completion
-  const simulateProgressAndComplete = (isVideo) => {
-    let progress = 0;
-    const progressInterval = setInterval(() => {
-      progress += Math.floor(Math.random() * 5) + 1;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(progressInterval);
-        
-        setTimeout(() => {
-          setDownloading(false);
-          setSuccessMessage(`${isVideo ? 'Video' : 'Image'} download started! Check your downloads folder.`);
-        }, 1000);
-      }
-      setDownloadProgress(progress);
-    }, 300);
-  };
-
-  const processDownload = async (downloadItem) => {
     try {
-      // If this is a retry, wait the specified delay
-      if (downloadItem.retryDelay) {
-        console.log(`Waiting ${downloadItem.retryDelay}ms before retry attempt`);
-        await new Promise(resolve => setTimeout(resolve, downloadItem.retryDelay));
-      }
+      setDownloading(true);
+      setDownloadProgress(0);
+      setError(null);
+      setSuccessMessage('');
       
-      // Create a visible indicator that download is in progress
-      setDownloadStatus({
-        ...downloadStatus,
-        [downloadItem.url]: { 
-          status: 'downloading', 
-          progress: 10,
-          attempt: (downloadItem.retryCount || 0) + 1 
-        }
-      });
-      
-      // Create a unique download ID to prevent duplicate downloads
-      const downloadId = `${new Date().getTime()}-${Math.floor(Math.random() * 10000)}`;
-      console.log(`Starting download #${downloadId} for ${downloadItem.url}`);
+      console.log(`Starting single download for: ${url}`);
       
       // Check if this is a reel/video
-      const isReel = downloadItem.url.includes('/reel/') || 
-                    (downloadItem.mediaInfo && downloadItem.mediaInfo.type === 'video');
+      const isReel = url.includes('/reel/') || 
+                    (mediaInfo && mediaInfo.type === 'video');
       
-      // Build direct download URL for the new endpoint
-      const encodedUrl = encodeURIComponent(downloadItem.url);
-      const downloadUrl = `/api/download/instagram-direct-file?url=${encodedUrl}&downloadId=${downloadId}&isReel=${isReel}`;
-      
-      console.log(`Downloading ${isReel ? 'VIDEO' : 'IMAGE'} from: ${downloadUrl}`);
-      
-      // Use more reliable direct download approach with iframe
-      const downloadFrame = document.createElement('iframe');
-      downloadFrame.style.display = 'none';
-      document.body.appendChild(downloadFrame);
-      
-      // Create a promise that resolves when either:
-      // 1. We detect the download has started (setTimeout as proxy)
-      // 2. An error occurs (message event from iframe)
-      const downloadPromise = new Promise((resolve, reject) => {
-        // Set a timeout to assume download has started after 5 seconds
-        const successTimeout = setTimeout(() => {
-          resolve('download-started');
-        }, 5000);
-        
-        // Listen for error messages from the iframe
-        window.addEventListener('message', (event) => {
-          if (event.data && event.data.error) {
-            clearTimeout(successTimeout);
-            reject(new Error(event.data.error));
-          }
-        }, { once: true });
-        
-        // Set a timeout for overall failure after 20 seconds
-        setTimeout(() => {
-          reject(new Error('Download timed out'));
-        }, 20000);
+      // Use optimized download endpoint
+      const response = await fetch('/api/download/optimized', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: url,
+          platform: 'instagram'
+        })
       });
-      
-      // Start the download
-      downloadFrame.src = downloadUrl;
-      
-      try {
-        await downloadPromise;
-        
-        // Update progress and show success
-        setDownloadStatus({
-          ...downloadStatus,
-          [downloadItem.url]: { 
-            status: 'completed', 
-            progress: 100,
-            attempt: (downloadItem.retryCount || 0) + 1 
-          }
-        });
-        
-        // Show success message
-        const fileType = isReel ? 'Video' : 'Image';
-        setSuccessMessage(`${fileType} download started! Check your downloads folder.`);
-        setShowSuccess(true);
-        
-        // Clean up the iframe after 15 seconds
-        setTimeout(() => {
-          try {
-            document.body.removeChild(downloadFrame);
-          } catch (e) {
-            console.log('Frame already removed', e);
-          }
-        }, 15000);
-        
-        return true;
-      } catch (err) {
-        console.error('iframe download failed:', err);
-        
-        // Try fallback method - direct window.open
-        try {
-          window.open(downloadUrl, '_blank');
-          
-          setSuccessMessage(`Download opened in new tab. If blocked, please allow popups.`);
-          setShowSuccess(true);
-          return true;
-        } catch (fallbackErr) {
-          console.error('Fallback download failed:', fallbackErr);
-          throw new Error(`Both download methods failed: ${err.message}`);
-        }
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
       }
+
+      // Get download time from response headers
+      const downloadTime = response.headers.get('X-Download-Time');
+      console.log(`Download completed in ${downloadTime}ms`);
+
+      // Create blob and download
+      const blob = await response.blob();
+      const downloadUrl_blob = window.URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = downloadUrl_blob;
+      link.download = `instagram_${isReel ? 'video' : 'image'}.${isReel ? 'mp4' : 'jpg'}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up blob URL
+      window.URL.revokeObjectURL(downloadUrl_blob);
+      
+      // Download completed successfully
+      console.log(`Download completed successfully in ${downloadTime}ms`);
+      
+      // Show success message
+      const fileType = isReel ? 'Video' : 'Image';
+      setSuccessMessage(`${fileType} download completed in ${downloadTime}ms!`);
+      setShowSuccess(true);
+      
+      // Add to download history
+      if (addToHistory) {
+        addToHistory({
+          type: 'instagram',
+          url,
+          title: mediaInfo.title || 'Instagram Content',
+          thumbnail: mediaInfo.thumbnail,
+          authorName: mediaInfo.authorName,
+          downloadTime: parseInt(downloadTime),
+          date: new Date().toISOString()
+        });
+      }
+      
     } catch (err) {
       console.error('Download failed:', err);
       setErrorMessage(`Download failed: ${err.message || 'Unknown error'}`);
       setShowError(true);
-      
-      // Add to retry queue with exponential backoff if this is a retryable error
-      const isRetryableError = 
-        err.message.includes('429') || 
-        err.message.includes('503') || 
-        err.message.includes('timeout') || 
-        err.message.includes('network') ||
-        err.message.includes('empty file') ||
-        err.message.includes('in progress');
-      
-      if (isRetryableError && (downloadItem.retryCount || 0) < 2) {
-        const retryDelay = Math.pow(2, (downloadItem.retryCount || 0)) * 2000;
-        console.log(`Scheduling retry #${(downloadItem.retryCount || 0) + 1} after ${retryDelay}ms`);
-        
-        // Add to retry queue with increased retry count
-        setDownloadQueue(prev => [
-          ...prev,
-          { 
-            ...downloadItem, 
-            retryCount: (downloadItem.retryCount || 0) + 1,
-            retryDelay
-          }
-        ]);
-      }
-      
-      return false;
+    } finally {
+      setDownloading(false);
+      setDownloadProgress(0);
     }
   };
 

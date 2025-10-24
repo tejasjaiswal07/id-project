@@ -45,11 +45,11 @@ export default function Header() {
         </Link>
         <Box sx={{ flexGrow: 1 }} />
         <Box sx={{ display: 'flex', gap: 2 }}>
-          <Link href="/youtube" passHref legacyBehavior>
-            <Button component="a" color="inherit">YouTube</Button>
-          </Link>
           <Link href="/instagram" passHref legacyBehavior>
-            <Button component="a" color="inherit">Instagram</Button>
+            <Button component="a" color="inherit" sx={{ fontWeight: 'bold' }}>Instagram</Button>
+          </Link>
+          <Link href="/performance" passHref legacyBehavior>
+            <Button component="a" color="inherit">Performance</Button>
           </Link>
           <IconButton color="inherit" onClick={toggleDarkMode}>
             {darkMode ? <Brightness7 /> : <Brightness4 />}

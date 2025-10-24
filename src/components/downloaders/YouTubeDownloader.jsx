@@ -100,19 +100,55 @@ const YouTubeDownloader = ({ addToHistory }) => {
         throw new Error('Invalid YouTube URL');
       }
       
-      // Simple validation - use direct info extraction instead of API call
-      const videoTitle = `YouTube Video (${videoId})`;
-      const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-      
-      // Set basic video info without API call to avoid API key issues
-      const basicVideoInfo = {
-        id: videoId,
-        title: videoTitle,
-        thumbnail: thumbnailUrl,
-        channelTitle: 'YouTube Channel', 
-      };
-      
-      setVideoInfo(basicVideoInfo);
+      // Try to get enhanced video info from server
+      try {
+        const response = await fetch('/api/info/enhanced', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            url: url,
+            platform: 'youtube'
+          })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          const enhancedInfo = result.data;
+          
+          if (enhancedInfo && enhancedInfo.title) {
+            setVideoInfo({
+              id: videoId,
+              title: enhancedInfo.title,
+              thumbnail: enhancedInfo.thumbnail,
+              channelTitle: enhancedInfo.authorName,
+              description: enhancedInfo.description,
+              duration: enhancedInfo.duration,
+              viewCount: enhancedInfo.viewCount
+            });
+          } else {
+            throw new Error('No enhanced info available');
+          }
+        } else {
+          throw new Error('Enhanced info API failed');
+        }
+      } catch (enhancedError) {
+        console.log('Enhanced info failed, using basic info:', enhancedError.message);
+        
+        // Fallback to basic info
+        const videoTitle = `YouTube Video (${videoId})`;
+        const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        
+        const basicVideoInfo = {
+          id: videoId,
+          title: videoTitle,
+          thumbnail: thumbnailUrl,
+          channelTitle: 'YouTube Channel', 
+        };
+        
+        setVideoInfo(basicVideoInfo);
+      }
       
       // Add to history
       if (addToHistory) {
@@ -132,57 +168,101 @@ const YouTubeDownloader = ({ addToHistory }) => {
     }
   };
 
-  // Handle download with our improved API that supports progress tracking
+  // Handle download with optimized API endpoint
   const handleDownload = async () => {
     if (!videoInfo) return;
     
+    // YouTube download functionality is temporarily disabled
+    setError('YouTube download functionality is currently disabled. Please use Instagram downloader instead.');
+    setShowError(true);
+    return;
+    
+    /* COMMENTED OUT - YouTube Download Functionality
     try {
       setDownloading(true);
       setDownloadProgress(0);
       setError(null);
+      setSuccessMessage('');
       
-      // Create the download URL
-      const downloadUrl = `/api/download/youtube?url=${encodeURIComponent(url)}&format=${format}&quality=${quality}`;
+      console.log(`Starting optimized download for: ${url} (Format: ${format}, Quality: ${quality})`);
       
-      // Create a hidden iframe for the download if it doesn't exist yet
-      if (!downloadFrameRef.current) {
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        downloadFrameRef.current = iframe;
+      // Use the optimized download endpoint
+      const response = await fetch('/api/download/optimized', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url,
+          format,
+          quality,
+          platform: 'youtube'
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status} ${response.statusText}`);
       }
+
+      // Get download time from response headers
+      const downloadTime = response.headers.get('X-Download-Time');
+      console.log(`Download completed in ${downloadTime}ms`);
+
+      // Track progress with realistic updates
+      let progress = 0;
+      progressIntervalRef.current = setInterval(() => {
+        progress += Math.random() * 20; // Faster progress simulation
+        if (progress > 95) progress = 95; // Don't go to 100% until actually complete
+        setDownloadProgress(Math.round(progress));
+      }, 300); // Faster updates
+
+      // Create blob and download
+      const blob = await response.blob();
+      const downloadUrl_blob = window.URL.createObjectURL(blob);
       
-      // Start the download
-      downloadFrameRef.current.src = downloadUrl;
+      const link = document.createElement('a');
+      link.href = downloadUrl_blob;
+      link.download = `${videoInfo.title}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      // Use fetch to make a HEAD request to get the download ID from headers
-      const response = await fetch(downloadUrl, { method: 'HEAD' });
-      const newDownloadId = response.headers.get('X-Download-ID');
+      // Clean up blob URL
+      window.URL.revokeObjectURL(downloadUrl_blob);
       
-      if (newDownloadId) {
-        setDownloadId(newDownloadId);
-      } else {
-        // If no download ID, still show progress but simulate it
-        console.warn('No download ID received, using simulated progress');
-        
-        // Simulate progress
-        let progress = 0;
-        progressIntervalRef.current = setInterval(() => {
-          progress += Math.floor(Math.random() * 5) + 1;
-          if (progress >= 100) {
-            progress = 100;
-            clearInterval(progressIntervalRef.current);
-            setDownloading(false);
-            setSuccessMessage('Download completed!');
-          }
-          setDownloadProgress(progress);
-        }, 500);
+      // Complete progress
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
       }
-    } catch (err) {
-      console.error('Error initiating download:', err);
-      setError(err.message || 'Error initiating download');
+      setDownloadProgress(100);
       setDownloading(false);
+      setSuccessMessage(`Download completed in ${downloadTime}ms! ${videoInfo.title}`);
+      
+      // Add to download history
+      if (addToHistory) {
+        addToHistory({
+          type: 'youtube',
+          url,
+          title: videoInfo.title,
+          format,
+          quality,
+          downloadTime: parseInt(downloadTime),
+          date: new Date().toISOString()
+        });
+      }
+      
+    } catch (err) {
+      console.error('Download failed:', err);
+      setError(`Download failed: ${err.message || 'Unknown error'}`);
+      setDownloading(false);
+      setDownloadProgress(0);
+      
+      // Clean up
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
     }
+    */
   };
 
   return (

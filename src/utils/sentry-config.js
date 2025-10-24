@@ -1,7 +1,40 @@
 /**
  * Sentry Error Tracking Configuration
  * Comprehensive error tracking and performance monitoring
+ * NOTE: Sentry is optional and gracefully handled if not installed
  */
+
+// Safely get Sentry without failing build if not installed
+let SentryClient = null;
+
+try {
+  // Only require during runtime, not during build
+  if (typeof window === 'undefined' && process.env.NODE_ENV !== 'production') {
+    // Development server
+    SentryClient = null; // Will be loaded on demand
+  }
+} catch (err) {
+  // Sentry not available
+}
+
+/**
+ * Lazily load Sentry when needed
+ */
+function getSentry() {
+  if (SentryClient !== null) {
+    return SentryClient;
+  }
+
+  try {
+    // Only attempt to require on-demand in runtime
+    if (typeof require !== 'undefined') {
+      return require('@sentry/nextjs');
+    }
+  } catch (err) {
+    return null;
+  }
+  return null;
+}
 
 /**
  * Initialize Sentry on the server side
@@ -16,7 +49,11 @@ export function initSentry() {
   }
 
   try {
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = getSentry();
+    if (!Sentry) {
+      console.log('Sentry package not installed. Error tracking disabled.');
+      return null;
+    }
 
     Sentry.init({
       dsn: sentryDsn,
@@ -47,7 +84,7 @@ export function initSentry() {
     console.log('✓ Sentry error tracking initialized');
     return Sentry;
   } catch (error) {
-    console.error('Failed to initialize Sentry:', error);
+    console.log('Sentry initialization skipped:', error.message);
     return null;
   }
 }
@@ -59,7 +96,8 @@ export function initSentry() {
  */
 export function captureException(error, context = {}) {
   try {
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = getSentry();
+    if (!Sentry) return;
 
     if (context && Object.keys(context).length > 0) {
       Sentry.setContext('additional', context);
@@ -80,7 +118,11 @@ export function captureException(error, context = {}) {
  */
 export function captureMessage(message, level = 'info', context = {}) {
   try {
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = getSentry();
+    if (!Sentry) {
+      console.log(`[${level.toUpperCase()}] ${message}`);
+      return;
+    }
 
     if (context && Object.keys(context).length > 0) {
       Sentry.setContext('additional', context);
@@ -98,7 +140,8 @@ export function captureMessage(message, level = 'info', context = {}) {
  */
 export function setUserContext(user) {
   try {
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = getSentry();
+    if (!Sentry) return;
     Sentry.setUser(user);
   } catch (err) {
     // Sentry not available
@@ -110,7 +153,8 @@ export function setUserContext(user) {
  */
 export function clearUserContext() {
   try {
-    const Sentry = require('@sentry/nextjs');
+    const Sentry = getSentry();
+    if (!Sentry) return;
     Sentry.setUser(null);
   } catch (err) {
     // Sentry not available

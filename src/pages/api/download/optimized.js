@@ -2,14 +2,11 @@ import { createReadStream, existsSync, mkdirSync, statSync, unlink } from 'fs';
 import { join } from 'path';
 import { pipeline } from 'stream/promises';
 import { v4 as uuidv4 } from 'uuid';
-import ytDlp from 'yt-dlp-exec';
+// import ytDlp from 'yt-dlp-exec'; // Removed: Not available in Vercel Hobby
 import ytdl from 'ytdl-core';
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+// import puppeteer from 'puppeteer-extra'; // Removed: Not available in Vercel Hobby
+// import StealthPlugin from 'puppeteer-extra-plugin-stealth'; // Removed: Not available in Vercel Hobby
 import axios from 'axios';
-
-// Add stealth plugin for better Instagram scraping
-puppeteer.use(StealthPlugin());
 
 // Optimized configuration for maximum performance
 const OPTIMIZED_CONFIG = {

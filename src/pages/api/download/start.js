@@ -2,7 +2,7 @@ import { existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { spawn } from 'child_process';
 import { v4 as uuidv4 } from 'uuid';
-import ytDlp from 'yt-dlp-exec';
+// import ytDlp from 'yt-dlp-exec'; // Removed: Not available in Vercel Hobby
 
 // Ensure temp directories exist
 const TEMP_DIR = join(process.cwd(), 'tmp');

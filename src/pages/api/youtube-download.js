@@ -1,6 +1,6 @@
 import ytdl from 'ytdl-core';
 import { pipeline } from 'stream/promises';
-import ytDlpExec from 'yt-dlp-exec';
+// import ytDlpExec from 'yt-dlp-exec'; // Removed: Not available in Vercel Hobby
 import fs from 'fs';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';

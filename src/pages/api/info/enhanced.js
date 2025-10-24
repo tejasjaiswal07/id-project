@@ -1,9 +1,6 @@
-import puppeteer from 'puppeteer-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+// import puppeteer from 'puppeteer-extra'; // Removed: Not available in Vercel Hobby
+// import StealthPlugin from 'puppeteer-extra-plugin-stealth'; // Removed: Not available in Vercel Hobby
 import axios from 'axios';
-
-// Add stealth plugin for better scraping
-puppeteer.use(StealthPlugin());
 
 // Browser pool for Instagram info extraction
 class InfoBrowserPool {
